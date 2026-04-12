@@ -1,0 +1,24 @@
+# pgdrift.yml.example
+# Copy this file to pgdrift.yml and fill in your connection details.
+# Passwords can also be supplied via the PGPASSWORD environment variable.
+
+profiles:
+  production:
+    host: prod.db.example.com
+    port: 5432
+    dbname: myapp
+    user: readonly
+    password: ""          # leave empty to use PGPASSWORD env var
+
+  staging:
+    host: staging.db.example.com
+    port: 5432
+    dbname: myapp_staging
+    user: readonly
+    # password omitted — will fall back to PGPASSWORD
+
+  local:
+    host: localhost
+    port: 5432
+    dbname: myapp_dev
+    user: postgres
