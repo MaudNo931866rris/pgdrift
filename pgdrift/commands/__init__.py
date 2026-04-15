@@ -1,42 +1,40 @@
-"""Command registry for pgdrift CLI."""
-from pgdrift.commands import (
-    diff_cmd,
-    snapshot_cmd,
-    report_cmd,
-    watch_cmd,
-    history_cmd,
-    baseline_cmd,
-    tag_cmd,
-    lint_cmd,
-    ignore_cmd,
-    mask_cmd,
-    redact_cmd,
-    schedule_cmd,
-    plugin_cmd,
-    threshold_cmd,
-    scorecard_cmd,
-)
+"""Register all CLI sub-commands."""
 
-ALL_COMMANDS = [
-    diff_cmd,
-    snapshot_cmd,
-    report_cmd,
-    watch_cmd,
-    history_cmd,
+from pgdrift.commands import (
     baseline_cmd,
-    tag_cmd,
-    lint_cmd,
+    diff_cmd,
+    filter_cmd,
+    history_cmd,
     ignore_cmd,
+    lint_cmd,
     mask_cmd,
-    redact_cmd,
-    schedule_cmd,
     plugin_cmd,
-    threshold_cmd,
+    redact_cmd,
+    report_cmd,
+    schedule_cmd,
     scorecard_cmd,
-]
+    snapshot_cmd,
+    tag_cmd,
+    threshold_cmd,
+    watch_cmd,
+)
 
 
 def register_all(subparsers) -> None:
-    """Register every command module with *subparsers*."""
-    for mod in ALL_COMMANDS:
-        mod.register(subparsers)
+    """Attach every command group to *subparsers*."""
+    baseline_cmd.register(subparsers)
+    diff_cmd  # registered via cli.py directly
+    filter_cmd.register(subparsers)
+    history_cmd.register(subparsers)
+    ignore_cmd.register(subparsers)
+    lint_cmd.register(subparsers)
+    mask_cmd.register(subparsers)
+    plugin_cmd.register(subparsers)
+    redact_cmd.register(subparsers)
+    report_cmd.register(subparsers)
+    schedule_cmd.register(subparsers)
+    scorecard_cmd.register(subparsers)
+    snapshot_cmd.register(subparsers)
+    tag_cmd.register(subparsers)
+    threshold_cmd.register(subparsers)
+    watch_cmd.register(subparsers)
