@@ -29,12 +29,17 @@ class DriftSummary:
             + self.modified_columns
         )
 
+    @property
+    def has_destructive_changes(self) -> bool:
+        """Return True if any tables or columns were removed."""
+        return self.removed_tables > 0 or self.removed_columns > 0
+
 
 def _severity(summary: "DriftSummary") -> str:
     total = summary.total_changes
     if total == 0:
         return "none"
-    if summary.removed_tables > 0 or summary.removed_columns > 0:
+    if summary.has_destructive_changes:
         return "high"
     if total >= 10:
         return "medium"
@@ -73,7 +78,7 @@ def compute_summary(report: DriftReport) -> DriftSummary:
 def format_summary(summary: DriftSummary) -> str:
     """Return a human-readable one-block summary string."""
     lines = [
-        f"Drift Summary: {summary.source} → {summary.target}",
+        f"Drift Summary: {summary.source} \u2192 {summary.target}",
         f"  Severity  : {summary.severity.upper()}",
         f"  Tables    : +{summary.added_tables} added  "
         f"-{summary.removed_tables} removed  "
