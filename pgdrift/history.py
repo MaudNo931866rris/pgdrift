@@ -40,8 +40,13 @@ def save_history(
 
 def load_history(path: str) -> tuple[str, str, List[TableSchema]]:
     """Load a history snapshot; returns (profile, captured_at, tables)."""
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f"History snapshot not found: {path}")
     with open(path) as fh:
-        payload = json.load(fh)
+        try:
+            payload = json.load(fh)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Invalid JSON in history file {path!r}: {exc}") from exc
     profile: str = payload.get("profile", "unknown")
     captured_at: str = payload.get("captured_at", "")
     tables = [_table_from_dict(t) for t in payload.get("tables", [])]
