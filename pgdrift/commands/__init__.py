@@ -1,4 +1,6 @@
-"""Register all CLI sub-commands."""
+"""Register all sub-commands."""
+from __future__ import annotations
+import argparse
 from pgdrift.commands import (
     snapshot_cmd,
     diff_cmd,
@@ -12,13 +14,14 @@ from pgdrift.commands import (
     mask_cmd,
     redact_cmd,
     schedule_cmd,
+    threshold_cmd,
     plugin_cmd,
     scorecard_cmd,
     filter_cmd,
     pin_cmd,
     compare_cmd,
-    threshold_cmd,
     policy_cmd,
+    similarity_cmd,
 )
 
 _MODULES = [
@@ -34,17 +37,17 @@ _MODULES = [
     mask_cmd,
     redact_cmd,
     schedule_cmd,
+    threshold_cmd,
     plugin_cmd,
     scorecard_cmd,
     filter_cmd,
     pin_cmd,
     compare_cmd,
-    threshold_cmd,
     policy_cmd,
+    similarity_cmd,
 ]
 
 
-def register_all(subparsers) -> None:
+def register_all(sub: argparse._SubParsersAction) -> None:  # type: ignore[type-arg]
     for mod in _MODULES:
-        if hasattr(mod, "register"):
-            mod.register(subparsers)
+        mod.register(sub)
