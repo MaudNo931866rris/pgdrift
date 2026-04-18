@@ -20,7 +20,12 @@ def load_tags(directory: str = ".") -> Dict[str, str]:
     if not path.exists():
         return {}
     with open(path, "r") as f:
-        return json.load(f)
+        try:
+            return json.load(f)
+        except json.JSONDecodeError as e:
+            raise ValueError(
+                f"Tags file '{path}' is corrupted or invalid JSON: {e}"
+            ) from e
 
 
 def save_tags(tags: Dict[str, str], directory: str = ".") -> None:
