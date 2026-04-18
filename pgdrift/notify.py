@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import json
+import logging
 import urllib.request
 import urllib.error
 from dataclasses import dataclass, field
 from typing import Optional
 
 from pgdrift.diff import DriftReport
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -56,7 +59,14 @@ def send_webhook(
     try:
         with urllib.request.urlopen(req, timeout=10):
             return True
-    except (urllib.error.URLError, urllib.error.HTTPError, OSError):
+    except urllib.error.HTTPError as exc:
+        logger.error("Webhook HTTP error: %s %s", exc.code, exc.reason)
+        return False
+    except urllib.error.URLError as exc:
+        logger.error("Webhook URL error: %s", exc.reason)
+        return False
+    except OSError as exc:
+        logger.error("Webhook network error: %s", exc)
         return False
 
 
