@@ -71,3 +71,14 @@ def test_entry_preserves_env_names():
     rollup = build_rollup([_report("alpha", "beta")])
     assert rollup.entries[0].source == "alpha"
     assert rollup.entries[0].target == "beta"
+
+
+def test_entry_count_matches_number_of_reports():
+    """The number of entries in the rollup should equal the number of input reports."""
+    reports = [
+        _report("dev", "staging", [_added_table()]),
+        _report("staging", "prod", [_removed_table()]),
+        _report("prod", "dr", []),
+    ]
+    rollup = build_rollup(reports)
+    assert len(rollup.entries) == len(reports)
