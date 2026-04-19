@@ -28,6 +28,19 @@ def _args(source: str = "prod", target: str = "staging", no_color: bool = True) 
     return Namespace(source=source, target=target, no_color=no_color)
 
 
+def _patch_diff_cmd(config=None, schema=None, report=None, formatted=""):
+    """Return a context manager that patches the common diff_cmd dependencies."""
+    if config is None:
+        config = _make_mock_config()
+    return (
+        patch("pgdrift.commands.diff_cmd.load", return_value=config),
+        patch("pgdrift.commands.diff_cmd.psycopg2.connect"),
+        patch("pgdrift.commands.diff_cmd.fetch_schema", return_value=schema or []),
+        patch("pgdrift.commands.diff_cmd.compute_drift", return_value=report),
+        patch("pgdrift.commands.diff_cmd.format_report", return_value=formatted),
+    )
+
+
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
@@ -55,12 +68,10 @@ def test_no_drift_returns_0(tmp_path):
     cfg_file = tmp_path / "pgdrift.yml"
     empty_report = DriftReport(source_env="prod", target_env="staging", table_diffs=[])
 
-    with patch("pgdrift.commands.diff_cmd.load", return_value=_make_mock_config()), \
-         patch("pgdrift.commands.diff_cmd.psycopg2.connect") as mock_connect, \
-         patch("pgdrift.commands.diff_cmd.fetch_schema", return_value=[]), \
-         patch("pgdrift.commands.diff_cmd.compute_drift", return_value=empty_report), \
-         patch("pgdrift.commands.diff_cmd.format_report", return_value="No drift."):
-
+    load_patch, connect_patch, fetch_patch, drift_patch, fmt_patch = _patch_diff_cmd(
+        report=empty_report, formatted="No drift."
+    )
+    with load_patch, connect_patch as mock_connect, fetch_patch, drift_patch, fmt_patch:
         mock_connect.return_value.__enter__ = lambda s: MagicMock()
         mock_connect.return_value.__exit__ = MagicMock(return_value=False)
 
@@ -78,12 +89,10 @@ def test_drift_returns_1(tmp_path):
         table_diffs=[TableDiff(table="public.users", status="added", column_diffs=[])],
     )
 
-    with patch("pgdrift.commands.diff_cmd.load", return_value=_make_mock_config()), \
-         patch("pgdrift.commands.diff_cmd.psycopg2.connect") as mock_connect, \
-         patch("pgdrift.commands.diff_cmd.fetch_schema", return_value=[]), \
-         patch("pgdrift.commands.diff_cmd.compute_drift", return_value=drift_report), \
-         patch("pgdrift.commands.diff_cmd.format_report", return_value="Drift found."):
-
+    load_patch, connect_patch, fetch_patch, drift_patch, fmt_patch = _patch_diff_cmd(
+        report=drift_report, formatted="1 table differs."
+    )
+    with load_patch, connect_patch as mock_connect, fetch_patch, drift_patch, fmt_patch:
         mock_connect.return_value.__enter__ = lambda s: MagicMock()
         mock_connect.return_value.__exit__ = MagicMock(return_value=False)
 
