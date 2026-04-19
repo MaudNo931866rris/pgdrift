@@ -21,13 +21,17 @@ def cmd_pin_save(args: argparse.Namespace) -> int:
     if profile is None:
         print(f"Unknown profile: {args.profile}", file=sys.stderr)
         return 1
-    conn = psycopg2.connect(profile.dsn)
+    try:
+        conn = psycopg2.connect(profile.dsn)
+    except psycopg2.OperationalError as exc:
+        print(f"Could not connect to database: {exc}", file=sys.stderr)
+        return 1
     try:
         tables = fetch_schema(conn)
     finally:
         conn.close()
     path = save_pin(args.profile, tables)
-    print(f"Pinned schema for '{args.profile}' → {path}")
+    print(f"Pinned schema for '{args.profile}' \u2192 {path}")
     return 0
 
 
