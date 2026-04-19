@@ -36,6 +36,14 @@ class DriftSummary:
 
 
 def _severity(summary: "DriftSummary") -> str:
+    """Classify drift severity based on change counts and destructiveness.
+
+    Rules:
+    - "none"   : no changes detected
+    - "high"   : any destructive changes (removed tables or columns)
+    - "medium" : 10 or more non-destructive changes
+    - "low"    : fewer than 10 non-destructive changes
+    """
     total = summary.total_changes
     if total == 0:
         return "none"
