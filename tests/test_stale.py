@@ -59,3 +59,12 @@ def test_age_days_is_approximate(tmp_path: Path) -> None:
     _write_snapshot(tmp_path, "snap.json", "staging", now - timedelta(days=3))
     report = check_stale(tmp_path, max_age_days=7)
     assert 2.9 < report.entries[0].age_days < 3.1
+
+
+def test_snapshot_exactly_at_boundary_is_not_stale(tmp_path: Path) -> None:
+    """A snapshot captured exactly max_age_days ago should not be considered stale."""
+    now = datetime.now(tz=timezone.utc)
+    _write_snapshot(tmp_path, "boundary.json", "prod", now - timedelta(days=7))
+    report = check_stale(tmp_path, max_age_days=7)
+    assert len(report.entries) == 1
+    assert not report.entries[0].is_stale
