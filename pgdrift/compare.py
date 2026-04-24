@@ -17,6 +17,15 @@ class CompareResult:
     reference_type: str  # 'baseline' | 'snapshot'
     report: DriftReport
 
+    @property
+    def has_drift(self) -> bool:
+        """Return True if the report contains any drift."""
+        return bool(
+            self.report.added_tables
+            or self.report.removed_tables
+            or self.report.modified_tables
+        )
+
 
 def compare_against_baseline(
     live_tables: Dict[str, TableSchema],
@@ -24,7 +33,10 @@ def compare_against_baseline(
     label: str,
     baselines_dir: Optional[str] = None,
 ) -> Optional[CompareResult]:
-    """Diff live tables against a saved baseline."""
+    """Diff live tables against a saved baseline.
+
+    Returns None if no baseline exists for the given profile and label.
+    """
     saved = load_baseline(profile, label, baselines_dir=baselines_dir)
     if saved is None:
         return None
@@ -42,7 +54,10 @@ def compare_against_snapshot(
     profile: str,
     snapshot_path: str,
 ) -> Optional[CompareResult]:
-    """Diff live tables against a saved snapshot file."""
+    """Diff live tables against a saved snapshot file.
+
+    Returns None if the snapshot file cannot be loaded.
+    """
     saved = load_snapshot(snapshot_path)
     if saved is None:
         return None
