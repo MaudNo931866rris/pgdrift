@@ -1,19 +1,24 @@
-"""Schema entropy: measures how unpredictable/varied a schema is over time."""
 from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List
 
-from pgdrift.audit import load_audit
+from pgdrift.trend import TrendPoint
 
 
 @dataclass
 class EntropyPoint:
-    snapshot_id: str
-    captured_at: str
-    changes: int
+    timestamp: str
+    total_changes: int
     entropy: float
+
+    def as_dict(self) -> dict:
+        return {
+            "timestamp": self.timestamp,
+            "total_changes": self.total_changes,
+            "entropy": self.entropy,
+        }
 
 
 @dataclass
@@ -25,50 +30,49 @@ class EntropyReport:
             return 0.0
         return sum(p.entropy for p in self.points) / len(self.points)
 
-    def max_entropy(self) -> Optional[EntropyPoint]:
+    def max_entropy(self) -> float:
         if not self.points:
-            return None
-        return max(self.points, key=lambda p: p.entropy)
+            return 0.0
+        return max(p.entropy for p in self.points)
 
     def as_dict(self) -> dict:
         return {
-            "average_entropy": round(self.average_entropy(), 4),
-            "max_entropy": self.max_entropy().entropy if self.max_entropy() else 0.0,
-            "points": [
-                {
-                    "snapshot_id": p.snapshot_id,
-                    "captured_at": p.captured_at,
-                    "changes": p.changes,
-                    "entropy": round(p.entropy, 4),
-                }
-                for p in self.points
-            ],
+            "average_entropy": self.average_entropy(),
+            "max_entropy": self.max_entropy(),
+            "points": [p.as_dict() for p in self.points],
         }
 
 
-def _shannon_entropy(changes: int, total: int) -> float:
-    if total == 0 or changes == 0:
+def _shannon_entropy(values: List[int]) -> float:
+    """Compute Shannon entropy over a list of non-negative integer counts."""
+    total = sum(values)
+    if total == 0:
         return 0.0
-    p = changes / total
-    return -p * math.log2(p)
+    result = 0.0
+    for v in values:
+        if v > 0:
+            p = v / total
+            result -= p * math.log2(p)
+    return result
 
 
-def compute_entropy(directory: str) -> EntropyReport:
-    records = load_audit(directory)
-    if not records:
-        return EntropyReport()
+def _entropy_for_point(pt: TrendPoint) -> float:
+    counts = [
+        pt.added_tables,
+        pt.removed_tables,
+        pt.modified_tables,
+    ]
+    return _shannon_entropy(counts)
 
-    total = sum(r.get("total_changes", 0) for r in records)
-    points = []
-    for r in records:
-        changes = r.get("total_changes", 0)
-        entropy = _shannon_entropy(changes, total) if total > 0 else 0.0
-        points.append(
-            EntropyPoint(
-                snapshot_id=r.get("snapshot_id", ""),
-                captured_at=r.get("captured_at", ""),
-                changes=changes,
-                entropy=entropy,
-            )
+
+def compute_entropy(points: List[TrendPoint]) -> EntropyReport:
+    """Build an EntropyReport from a sequence of TrendPoints."""
+    entropy_points = [
+        EntropyPoint(
+            timestamp=pt.timestamp,
+            total_changes=pt.added_tables + pt.removed_tables + pt.modified_tables,
+            entropy=_entropy_for_point(pt),
         )
-    return EntropyReport(points=points)
+        for pt in points
+    ]
+    return EntropyReport(points=entropy_points)
