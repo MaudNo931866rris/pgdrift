@@ -1,5 +1,6 @@
 """Tests for pgdrift.commands.velocity_cmd"""
 import argparse
+import json
 from unittest.mock import patch
 from pgdrift.commands.velocity_cmd import cmd_velocity
 from pgdrift.velocity import VelocityReport, VelocityPoint
@@ -43,8 +44,18 @@ def test_json_flag_outputs_json(capsys):
     with patch("pgdrift.commands.velocity_cmd.compute_velocity", return_value=report):
         rc = cmd_velocity(_args(json=True))
     assert rc == 0
-    import json
     out = capsys.readouterr().out
     data = json.loads(out)
     assert "average_per_day" in data
     assert "points" in data
+
+
+def test_json_flag_no_points_outputs_json(capsys):
+    """Ensure JSON output is valid even when there are no velocity points."""
+    with patch("pgdrift.commands.velocity_cmd.compute_velocity", return_value=VelocityReport(points=[])):
+        rc = cmd_velocity(_args(json=True))
+    assert rc == 0
+    out = capsys.readouterr().out
+    data = json.loads(out)
+    assert "points" in data
+    assert data["points"] == []
