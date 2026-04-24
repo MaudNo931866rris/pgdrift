@@ -37,9 +37,23 @@ class ShadowReport:
             ],
         }
 
+    def tables_with_shadow(self) -> List[str]:
+        """Return a sorted list of table names that have detected drift."""
+        return sorted(e.table for e in self.entries)
+
 
 def compute_shadow(pin_label: str, live_tables: Dict) -> ShadowReport:
-    """Compare live schema tables against a saved pin."""
+    """Compare live schema tables against a saved pin.
+
+    Args:
+        pin_label: The label identifying the pinned schema snapshot to compare against.
+        live_tables: A mapping of table names to their current live schema definitions.
+
+    Returns:
+        A ShadowReport containing one entry per table whose live schema differs
+        from the pinned reference. Returns an empty ShadowReport if the pin
+        cannot be found.
+    """
     pinned = load_pin_tables(pin_label)
     if pinned is None:
         return ShadowReport()
